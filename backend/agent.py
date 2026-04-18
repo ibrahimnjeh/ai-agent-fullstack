@@ -2,7 +2,8 @@ import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import MemorySaver # For short-term memory
+from langgraph.checkpoint.memory import MemorySaver 
+from langchain_core.messages import SystemMessage, HumanMessage
 from tools import search_tool, wiki_tool
 from schemas import DiscoveryResponse
 
@@ -24,16 +25,18 @@ tools = [search_tool, wiki_tool]
 agent_executor = create_react_agent(
     model=llm,
     tools=tools,
-    messages_modifier=system_message,
-    checkpointer=memory # This allows the agent to have 'threads'
+    checkpointer=memory
 )
-
 def chat_with_agent(user_input: str, thread_id: str):
     config = {"configurable": {"thread_id": thread_id}}
-    
     response = agent_executor.invoke(
-        {"messages": [("user", user_input)]}, 
-        config
-    )
+    {
+        "messages": [
+            SystemMessage(content=system_message),
+            HumanMessage(content=user_input)
+        ]
+    },
+    config
+)
     
     return response["messages"][-1].content
